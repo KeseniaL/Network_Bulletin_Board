@@ -136,8 +136,9 @@ public class BulletinBoardClient extends JFrame {
         // will add more filters like color, contains, refers to later
 
         getAllButton.addActionListener(e -> {
-            // placeholder for now -- simple GET
-            networkClient.sendRequest("GET");
+            // For now just GET (ALL)
+            // String cmd = CommandBuilder.buildGet(null, null);
+            // networkClient.sendRequest(cmd);
         });
 
         panel.add(getAllButton);
@@ -155,17 +156,27 @@ public class BulletinBoardClient extends JFrame {
         JButton getPinsButton = new JButton("GET PINS");
 
         pinButton.addActionListener(e -> {
-            String cmd = String.format("PIN %s %s", pinXField.getText(), pinYField.getText());
-            networkClient.sendRequest(cmd);
+            try {
+                int x = Integer.parseInt(pinXField.getText());
+                int y = Integer.parseInt(pinYField.getText());
+                networkClient.sendRequest(CommandBuilder.buildPin(x, y));
+            } catch (NumberFormatException ex) {
+                log("Error: Coordinates must be integers.");
+            }
         });
 
         unpinButton.addActionListener(e -> {
-            String cmd = String.format("UNPIN %s %s", pinXField.getText(), pinYField.getText());
-            networkClient.sendRequest(cmd);
+            try {
+                int x = Integer.parseInt(pinXField.getText());
+                int y = Integer.parseInt(pinYField.getText());
+                networkClient.sendRequest(CommandBuilder.buildUnpin(x, y));
+            } catch (NumberFormatException ex) {
+                log("Error: Coordinates must be integers.");
+            }
         });
 
         getPinsButton.addActionListener(e -> {
-            networkClient.sendRequest("GET PINS");
+            networkClient.sendRequest(CommandBuilder.buildGetPins());
         });
 
         panel.add(new JLabel("X:"));
@@ -186,8 +197,8 @@ public class BulletinBoardClient extends JFrame {
         JButton shakeButton = new JButton("SHAKE");
         JButton clearButton = new JButton("CLEAR");
 
-        shakeButton.addActionListener(e -> networkClient.sendRequest("SHAKE"));
-        clearButton.addActionListener(e -> networkClient.sendRequest("CLEAR"));
+        shakeButton.addActionListener(e -> networkClient.sendRequest(CommandBuilder.buildShake()));
+        clearButton.addActionListener(e -> networkClient.sendRequest(CommandBuilder.buildClear()));
 
         panel.add(shakeButton);
         panel.add(clearButton);
@@ -235,12 +246,17 @@ public class BulletinBoardClient extends JFrame {
             log("Message cannot be empty for POST.");
             return;
         }
-        String cmd = String.format("POST %s %s %s %s",
-                postXField.getText(),
-                postYField.getText(),
-                colorBox.getSelectedItem().toString(),
-                message);
-        networkClient.sendRequest(cmd);
+
+        try {
+            int x = Integer.parseInt(postXField.getText());
+            int y = Integer.parseInt(postYField.getText());
+            String color = colorBox.getSelectedItem().toString();
+
+            String cmd = CommandBuilder.buildPost(x, y, color, message);
+            networkClient.sendRequest(cmd);
+        } catch (NumberFormatException e) {
+            log("Error: Coordinates must be integers.");
+        }
     }
 
     // public methods for NetworkClient to call to update the GUI
