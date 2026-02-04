@@ -1,4 +1,3 @@
-import java.util.*;
 
 /*Responsible for the following:
     - Parsing clinet commands
@@ -9,12 +8,12 @@ import java.util.*;
 //class handles parsing a single client command
 public class ProtocolParser{
 
-    public static String handle(String input){
+    public static String parse(String input){
         if (input == null || input.isEmpty()){
             return error ("INVALID_FORMAT", "Empty command"); //rejects any empty commands immediately
         }
 
-        String[] tokens = input.split (" "); // split command by spaces, single spaces only as detailed in RFC
+        String[] tokens = input.split ("\\s+"); // split command by spaces, single spaces only as detailed in RFC
         String cmd = tokens[0]; // first token must be command key word
         //parsing for the different commands
         switch (cmd){
@@ -40,7 +39,7 @@ public class ProtocolParser{
         }
     }
     //this validates syntax of POST <x> <y> <colour> <message>
-    private static String parsePost(String[] token, String fulline){
+    private static String parsePost(String[] tokens, String fulline){
         if (tokens.length < 5){
             return error("INVALID_FORMAT", "POST requires x y colour message");
         }
@@ -70,10 +69,10 @@ public class ProtocolParser{
             return error("INVALID_FORMAT", "Coordinates must be non negative integers");
         }
 
-        return "SUCCESS PIN_PARSED";
+        return "SUCCESS PIN_PARSED"; //succesful parsing pin/unpin
     }
     //for SHAKE and CLEAR that takes no arguments
-    private static String parseNoArgs(String[] tokens, String cmd){
+    private static String ParseNoArgs(String[] tokens, String cmd){
         if (tokens.length != 1){
             return error("INVALID_FORMAT", cmd + "takes no arguments");
         }

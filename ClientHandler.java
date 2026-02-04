@@ -24,18 +24,18 @@ public class ClientHandler extends Thread{
         try { 
             in = new BufferedReader (new InputStreamReader(socket.getInputStream())); 
             out = new PrintWriter(socket.getOutputStream(), true);
-
+            
             //immediately send handshake info
             sendHandshake(); 
 
             //Dealing with client requests, server here will read request as long as its not empty and generate a response
             String line;
             while ((line = in.readLine()) != null){
-                String response = ProtocolParser.handle(line); //this passes raw command to protocol parser
+                String response = ProtocolParser.parse(line); //this passes raw command to protocol parser
                 out.println(response); //send single response to client once command has gone through parser
 
                 //client has completed their request and wishes to disconnect, close socket
-                if(line.equals("DISCONNECT")){
+                if(response.equals("DISCONNECT")){
                     break;
                 }
             }
