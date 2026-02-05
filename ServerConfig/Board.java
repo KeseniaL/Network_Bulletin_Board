@@ -129,7 +129,6 @@ public class Board {
 
         return sb.toString().trim();
     }
-
     //standardizes error messages from server
     private static String error(String code, String msg) {
         return "ERROR " + code + " " + msg;

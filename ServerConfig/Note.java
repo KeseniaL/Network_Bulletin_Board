@@ -31,7 +31,7 @@ public class Note{
     }
     //overlap detection
     public boolean completelyOverlaps(Note other){
-        return other.x >= this.x && other.y >=this.y && other.x + other.width <= this.x + this.width && other.y +other.height <= this.y + this.height;
+        return other.x >= this.x && other.y >= this.y && other.x + other.width <= this.width && other.y + other.height <= this.y + this.height;
     }
     public boolean isPinned(){
         return !pins.isEmpty();
@@ -66,5 +66,4 @@ public class Note{
     public List<Pin> getPins(){
         return pins;
     }
-
 }
