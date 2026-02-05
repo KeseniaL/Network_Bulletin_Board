@@ -57,8 +57,9 @@ public class BBoard{
             while (true){
                 Socket clientSocket = serverSocket.accept(); //barred until client connetcs
 
-                //create  new thread for client
+                //create  new thread for client- this is the handshaking starter also
                 ClientHandler handler = new ClientHandler(clientSocket);
+                handler.start();
             }
         } catch (Exception e) {
             //end server if any fatal startup error occurs
