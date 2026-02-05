@@ -74,6 +74,20 @@ public class Board{
         notes.clear();
         return "SUCCESS BOARD_CLEARED";
     }
+    //GET
+    public synchronized String get(){
+        if (notes.isEmpty()){
+            return "SUCCESS GET_EMPTY";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("SUCCESS GET\n");
+
+        for (Note n : notes){
+            sb.append(n.toProtocolString()).append("\n");
+        }
+        return sb.toString().trim(); //gets rid of very last new line
+        
+    }
 
     //standardizes error messages from server
     private static String error (String code, String msg){

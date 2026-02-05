@@ -1,12 +1,13 @@
-
 /*Responsible for the following:
-    - Parsing clinet commands
+    - Parsing client commands
     - double checking and validating syntax
     - success or error strings set up
 */
 
 //class handles parsing a single client command
 public class ProtocolParser{
+
+    private static final Board board = new Board();
 
     public static String parse(String input){
         if (input == null || input.isEmpty()){
@@ -15,17 +16,21 @@ public class ProtocolParser{
 
         String[] tokens = input.split ("\\s+"); // split command by spaces, single spaces only as detailed in RFC
         String cmd = tokens[0]; // first token must be command key word
+        
         //parsing for the different commands
-        switch (cmd){
+        switch (cmd) {
             case "POST":
                 return parsePost (tokens, input);
 
             case "GET":
-                return "SUCCESS GET (stub)";
-            
+                if (tokens.length !=1){
+                    return error("INVALID_FORMAT", "GET takes no arguments");
+                }
+                return board.get();            
             case "PIN":
+                return parsePin(tokens);
             case "UNPIN":
-                    return parsePin(tokens);
+                    return parseUnPin(tokens);
             
             case "SHAKE":
             case "CLEAR":
@@ -43,9 +48,10 @@ public class ProtocolParser{
         if (tokens.length < 5){
             return error("INVALID_FORMAT", "POST requires x y colour message");
         }
+        int x, y;
         try {
-            Integer.parseInt(tokens[1]);
-            Integer.parseInt(tokens[2]);
+           x= Integer.parseInt(tokens[1]);
+           y = Integer.parseInt(tokens[2]);
         }catch (NumberFormatException e){
             return error("INVALID_FORMAT", "Coordinates must be non negative integers"); //coordinates has to be non negative int
         }
@@ -54,29 +60,55 @@ public class ProtocolParser{
         if (!BBoard.VALID_COLOURS.contains(colour)){
             return error("COLOUR_NOT_SUPPORTED","Colour not found in list");
         }
-        return "SUCCESS POST_PARSED";
+
+        int msgStart = fulline.indexOf(colour) + colour.length()+ 1;
+        String message = fulline.substring(msgStart);
+
+        return board.post(x, y, colour,message);
     }
-    //validates PIN and UNPIN syntax: PIN <x> <y>
+    //validates PIN syntax: PIN <x> <y>
     private static String parsePin(String[] tokens){
         if (tokens.length != 3){
             return error("INVALID_FORMAT", "PIN requires x y coordinates");
         }
 
+        int x,y;
         try {
-            Integer.parseInt(tokens[1]);
-            Integer.parseInt(tokens[2]);
+            x=Integer.parseInt(tokens[1]);
+           y= Integer.parseInt(tokens[2]);
         } catch (NumberFormatException e){
             return error("INVALID_FORMAT", "Coordinates must be non negative integers");
         }
 
-        return "SUCCESS PIN_PARSED"; //succesful parsing pin/unpin
+        return board.pin(x,y);
     }
+
+     //validates UNPIN syntax: UNPIN <x> <y>
+    private static String parseUnPin(String[] tokens){
+        if (tokens.length != 3){
+            return error("INVALID_FORMAT", "PIN requires x y coordinates");
+        }
+        int x,y;
+        try {
+           x= Integer.parseInt(tokens[1]);
+           y= Integer.parseInt(tokens[2]);
+        } catch (NumberFormatException e){
+            return error("INVALID_FORMAT", "Coordinates must be non negative integers");
+        }
+
+        return board.unpin(x,y); 
+    }
+
     //for SHAKE and CLEAR that takes no arguments
     private static String ParseNoArgs(String[] tokens, String cmd){
         if (tokens.length != 1){
             return error("INVALID_FORMAT", cmd + "takes no arguments");
         }
-        return "SUCCESS" + cmd + "_PARSED";
+        if (cmd.equals("SHAKE")){
+            return board.shake();
+        } else{
+            return board.clear();  
+        }
     }
     //standardizes error messages from server
     private static String error (String code, String msg){

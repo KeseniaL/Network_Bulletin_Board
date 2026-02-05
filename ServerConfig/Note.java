@@ -31,7 +31,7 @@ public class Note{
     }
     //overlap detection
     public boolean completelyOverlaps(Note other){
-        return this.x == other.x && this.y == other.y && this.width == other.width && this.height == other.height;
+        return other.x >= this.x && other.y >=this.y && other.x + other.width <= this.x + this.width && other.y +other.height <= this.y + this.height;
     }
     public boolean isPinned(){
         return !pins.isEmpty();
@@ -61,5 +61,10 @@ public class Note{
     public void removePinAt(int px, int py){
         pins.removeIf(p-> p.x == px && p.y == py);
     }
+
+    //GET ...almost forgot about you i'm sorry
+    public String toProtocolString() {
+    return "NOTE " + x + " " + y + " " + colour + " " + message;
+}
 
 }
