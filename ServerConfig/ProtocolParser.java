@@ -35,7 +35,7 @@ public class ProtocolParser{
                 return "SUCCESS DISCONNECTED";
             
             default:
-                return error("INVALID_FORMAT", "Unknown command");
+                return error(" INVALID_FORMAT ", "Unknown command");
         }
     }
     //this validates syntax of POST <x> <y> <colour> <message>
@@ -80,6 +80,6 @@ public class ProtocolParser{
     }
     //standardizes error messages from server
     private static String error (String code, String msg){
-        return "ERROR" + code + " " + msg;
+        return "ERROR " + code + "  " + msg;
     }
 }

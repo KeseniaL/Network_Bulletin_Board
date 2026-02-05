@@ -57,7 +57,7 @@ public class Note{
         }
         return false;
     }
-    //this will remove a pin at specific coordinate
+    //this will remove a pin at specific coordinate, much simpler
     public void removePinAt(int px, int py){
         pins.removeIf(p-> p.x == px && p.y == py);
     }
