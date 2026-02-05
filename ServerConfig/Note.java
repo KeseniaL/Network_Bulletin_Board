@@ -40,7 +40,7 @@ public class Note{
     public void addPin(Pin pin){
         pins.add(pin);
     }
-    //remove/unpin pin at specific coordinate, named thsi way to prevent confusion
+    /*remove/unpin pin at specific coordinate, named thsi way to prevent confusion
     public boolean Un_pin(int px, int py){
         for (Pin p :pins){
             if (p.x ==px && p.y == py){
@@ -49,13 +49,17 @@ public class Note{
             }
         }
         return false;
-    }
+    }*/
     //return pin coordinates if pins are there 
     public boolean hasPinAt(int px, int py){
         for (Pin p: pins){
             if (p.x ==px && p.y ==py) return true;
         }
         return false;
+    }
+    //this will remove a pin at specific coordinate
+    public void removePinAt(int px, int py){
+        pins.removeIf(p-> p.x == px && p.y == py);
     }
 
 }

@@ -52,7 +52,7 @@ public class ProtocolParser{
         //validate colour
         String colour = tokens[3].toLowerCase();
         if (!BBoard.VALID_COLOURS.contains(colour)){
-            return error("INVALID_COLOUR","Colour not found in list");
+            return error("COLOUR_NOT_SUPPORTED","Colour not found in list");
         }
         return "SUCCESS POST_PARSED";
     }
