@@ -40,16 +40,6 @@ public class Note{
     public void addPin(Pin pin){
         pins.add(pin);
     }
-    /*remove/unpin pin at specific coordinate, named thsi way to prevent confusion
-    public boolean Un_pin(int px, int py){
-        for (Pin p :pins){
-            if (p.x ==px && p.y == py){
-                pins.remove(p);
-                return true;
-            }
-        }
-        return false;
-    }*/
     //return pin coordinates if pins are there 
     public boolean hasPinAt(int px, int py){
         for (Pin p: pins){
@@ -62,9 +52,19 @@ public class Note{
         pins.removeIf(p-> p.x == px && p.y == py);
     }
 
-    //GET ...almost forgot about you i'm sorry
+    //GET and subsequent portions for filter based get
     public String toProtocolString() {
-    return "NOTE " + x + " " + y + " " + colour + " " + message;
-}
+        return "NOTE " + x + " " + y + " " + colour + " " + message;
+    }
+    //for conditional/ filter based get
+    public String getColour(){
+        return colour;
+    }
+    public String getMessage(){
+        return message;
+    }
+    public List<Pin> getPins(){
+        return pins;
+    }
 
 }
