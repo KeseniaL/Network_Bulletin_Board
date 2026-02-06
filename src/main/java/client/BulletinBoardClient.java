@@ -101,7 +101,7 @@ public class BulletinBoardClient extends JFrame {
 
         // ip and port fields
         ipField = new JTextField("localhost", 10);
-        portField = new JTextField("12345", 5);
+        portField = new JTextField("4554", 5);
         connectButton = new JButton("Connect");
         disconnectButton = new JButton("Disconnect");
         disconnectButton.setEnabled(false);

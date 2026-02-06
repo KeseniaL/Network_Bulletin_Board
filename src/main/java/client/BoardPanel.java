@@ -63,8 +63,8 @@ public class BoardPanel extends JPanel {
 
     public boolean checkOverlap(int x, int y, int w, int h) {
         for (ClientNote n : notes) {
-            if (x < n.x + n.width && x + w > n.x &&
-                    y < n.y + n.height && y + h > n.y) {
+            // Only check for exact coordinate overlap (as per Server specs)
+            if (n.x == x && n.y == y) {
                 return true;
             }
         }
