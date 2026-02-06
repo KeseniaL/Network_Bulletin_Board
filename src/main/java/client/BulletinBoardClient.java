@@ -30,6 +30,7 @@ public class BulletinBoardClient extends JFrame {
 
     // Flag to distinguish between Full Sync and Manual Filtered Query
     private boolean manualFilterActive = false;
+    private boolean firstConnect = true;
 
     // Sync Mechanism
     private Timer pollingTimer;
@@ -371,6 +372,65 @@ public class BulletinBoardClient extends JFrame {
         networkClient.disconnect();
     }
 
+    private void configureBoard() {
+        JTextField wField = new JTextField("500", 5);
+        JTextField hField = new JTextField("500", 5);
+        JTextField nwField = new JTextField("50", 5);
+        JTextField nhField = new JTextField("50", 5);
+
+        JPanel myPanel = new JPanel();
+        myPanel.setLayout(new GridLayout(4, 2));
+        myPanel.add(new JLabel("Board Width:"));
+        myPanel.add(wField);
+        myPanel.add(new JLabel("Board Height:"));
+        myPanel.add(hField);
+        myPanel.add(new JLabel("Note Width:"));
+        myPanel.add(nwField);
+        myPanel.add(new JLabel("Note Height:"));
+        myPanel.add(nhField);
+
+        // Options for the user
+        Object[] options = { "Resize Board", "Skip (Use Current)" };
+
+        int result = JOptionPane.showOptionDialog(null, myPanel,
+                "Configure Board Dimensions?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        // If "Resize Board" (Index 0) is selected
+        if (result == 0) {
+            try {
+                int w = Integer.parseInt(wField.getText());
+                int h = Integer.parseInt(hField.getText());
+                int nw = Integer.parseInt(nwField.getText());
+                int nh = Integer.parseInt(nhField.getText());
+                networkClient.sendRequest(CommandBuilder.buildResize(w, h, nw, nh));
+            } catch (NumberFormatException e) {
+                log("Invalid dimensions. Must be integers.");
+            }
+        } else {
+            // "Skip" = Lock the board with current dimensions
+            try {
+                int w = boardPanel.getBoardWidth();
+                int h = boardPanel.getBoardHeight();
+                // Send explicit RESIZE to lock the config (Server won't clear if dims match)
+                networkClient.sendRequest(
+                        CommandBuilder.buildResize(isValid(w) ? w : 500, isValid(h) ? h : 500, noteWidth, noteHeight));
+                log("Configuration confirmed. Board locked.");
+            } catch (Exception e) {
+                // Fallback catch-all
+                networkClient.sendRequest(CommandBuilder.buildResize(500, 500, 50, 50));
+            }
+        }
+    }
+
+    private boolean isValid(int val) {
+        return val > 0;
+    }
+
     private void sendPost() {
         // basic validation for POST command
         String message = postMessageField.getText();
@@ -432,9 +492,12 @@ public class BulletinBoardClient extends JFrame {
             disconnectButton.setEnabled(true);
             // Reset board on new connection
             boardPanel.clear();
-            boardPanel.clear();
             log("Connected to server.");
-            pollingTimer.start();
+
+            log("Connected to server.");
+
+            // Handshake: Get current state to check if configured
+            networkClient.sendRequest(CommandBuilder.buildGet("", null, null, ""));
         });
     }
 
@@ -443,7 +506,6 @@ public class BulletinBoardClient extends JFrame {
         SwingUtilities.invokeLater(() -> {
             connectButton.setEnabled(true);
             disconnectButton.setEnabled(false);
-            boardPanel.clear(); // Reset board on disconnect
             boardPanel.clear(); // Reset board on disconnect
             log("Disconnected from server.");
             pollingTimer.stop();
@@ -529,6 +591,41 @@ public class BulletinBoardClient extends JFrame {
                 isBuffering = false;
             }
         } else if (response.contains("SUCCESS GET")) {
+            // Check for dimensions in the SUCCESS GET line
+            // PROTOCOL: SUCCESS GET <w> <h> <nw> <nh>
+            String[] parts = response.split(" ");
+            if (parts.length >= 6) { // SUCCESS, GET, w, h, nw, nh, [configured]
+                try {
+                    int w = Integer.parseInt(parts[2]);
+                    int h = Integer.parseInt(parts[3]);
+                    int nw = Integer.parseInt(parts[4]);
+                    int nh = Integer.parseInt(parts[5]);
+                    boardPanel.setBoardDimensions(w, h);
+                    this.noteWidth = nw;
+                    this.noteHeight = nh;
+
+                    // Check logic for first connection
+                    if (firstConnect) {
+                        boolean isConfigured = false;
+                        if (parts.length >= 7) {
+                            isConfigured = Boolean.parseBoolean(parts[6]);
+                        }
+
+                        // Decide to show popup or not
+                        if (!isConfigured) {
+                            SwingUtilities.invokeLater(() -> configureBoard());
+                        } else {
+                            log("Board already configured. Skipping setup.");
+                        }
+
+                        firstConnect = false;
+                        pollingTimer.start();
+                    }
+
+                } catch (Exception e) {
+                }
+            }
+
             // Only start buffering (updating board) if this is a SYNC request (not a manual
             // filter query)
             if (!manualFilterActive) {
@@ -540,6 +637,11 @@ public class BulletinBoardClient extends JFrame {
                 // We just let the logs show the results.
                 isBuffering = false;
             }
+        } else if (response.contains("SUCCESS RESIZED")) {
+            boardPanel.clear();
+            log("Board resized by server. Refreshing...");
+            // Force a refresh
+            networkClient.sendRequest(CommandBuilder.buildGet("", null, null, ""));
         } else if (response.startsWith("PIN ")) {
             // Data Line: PIN x y (Not explicit SUCCESS command)
             // But we also have "PIN_PARSED" check below.

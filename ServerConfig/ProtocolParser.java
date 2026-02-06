@@ -38,6 +38,23 @@ public class ProtocolParser {
             case "CLEAR":
                 return ParseNoArgs(tokens, cmd);
 
+            case "RESIZE":
+                if (tokens.length != 5) {
+                    return error("INVALID_FORMAT", "RESIZE requires w h nw nh");
+                }
+                int w, h, nw, nh;
+                try {
+                    w = Integer.parseInt(tokens[1]);
+                    h = Integer.parseInt(tokens[2]);
+                    nw = Integer.parseInt(tokens[3]);
+                    nh = Integer.parseInt(tokens[4]);
+                    if (w < 1 || h < 1 || nw < 1 || nh < 1)
+                        throw new NumberFormatException();
+                } catch (NumberFormatException e) {
+                    return error("INVALID_FORMAT", "Dimensions must be positive integers");
+                }
+                return board.resize(w, h, nw, nh);
+
             case "DISCONNECT":
                 return "SUCCESS DISCONNECTED";
 

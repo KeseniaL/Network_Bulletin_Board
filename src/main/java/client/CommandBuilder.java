@@ -54,4 +54,9 @@ public class CommandBuilder {
     public static String buildClear() {
         return "CLEAR";
     }
+
+    // RESIZE <w> <h> <nw> <nh>
+    public static String buildResize(int w, int h, int nw, int nh) {
+        return String.format("RESIZE %d %d %d %d", w, h, nw, nh);
+    }
 }

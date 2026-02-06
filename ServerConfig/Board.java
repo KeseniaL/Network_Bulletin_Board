@@ -118,7 +118,9 @@ public class Board {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SUCCESS GET\n"); // Header required for client validation/buffering
+        sb.append("SUCCESS GET ").append(BBoard.BOARD_WIDTH).append(" ").append(BBoard.BOARD_HEIGHT).append(" ")
+                .append(BBoard.NOTE_WIDTH).append(" ").append(BBoard.NOTE_HEIGHT).append(" ")
+                .append(BBoard.configured).append("\n"); // Header with dimensions and configured flag
         boolean found = false;
 
         for (Note n : notes) {
@@ -153,5 +155,19 @@ public class Board {
     // standardizes error messages from server
     private static String error(String code, String msg) {
         return "ERROR " + code + " " + msg;
+    }
+
+    public synchronized String resize(int w, int h, int nw, int nh) {
+        // If dimensions match, just lock configuration (don't clear)
+        if (w == BBoard.BOARD_WIDTH && h == BBoard.BOARD_HEIGHT &&
+                nw == BBoard.NOTE_WIDTH && nh == BBoard.NOTE_HEIGHT) {
+            BBoard.updateDimensions(w, h, nw, nh); // Sets configured = true
+            return "SUCCESS RESIZED";
+        }
+
+        // Otherwise, resize and clear
+        BBoard.updateDimensions(w, h, nw, nh);
+        notes.clear();
+        return "SUCCESS RESIZED";
     }
 }

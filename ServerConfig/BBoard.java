@@ -10,33 +10,36 @@ import java.util.*;
 *   - Creating only one thread per client
 */
 
+public class BBoard {
 
-public class BBoard{
-
-//This is the initial set up of board 
-// Public chosen to allow further accessibility from other classes ClientHandler/ ProtocolParser (upcoming) and static chosen to be shared amongst threads
-    public static int BOARD_WIDTH; //board width set
+    // This is the initial set up of board
+    // Public chosen to allow further accessibility from other classes
+    // ClientHandler/ ProtocolParser (upcoming) and static chosen to be shared
+    // amongst threads
+    public static int BOARD_WIDTH; // board width set
     public static int BOARD_HEIGHT; // board height set
-    public static int NOTE_WIDTH; //note width set
-    public static int NOTE_HEIGHT; //note height set
+    public static int NOTE_WIDTH; // note width set
+    public static int NOTE_HEIGHT; // note height set
+    public static boolean configured = false; // Tracks if board has been resized
 
-    public static Set<String> VALID_COLOURS = new List<>; //initializing string set for colours
+    public static Set<String> VALID_COLOURS = new HashSet<>(); // initializing string set for colours
 
-// ENTRY POINT 
-    public static void main(String[] args){
-        /*Requires a few minimum requirements:
-            - args[0] = port
-            - args[1] = board width
-            - args[2] = board height
-            - args[3] = note width
-            - args[4] = note height
-        */
-        if (args.length<6){
+    // ENTRY POINT
+    public static void main(String[] args) {
+        /*
+         * Requires a few minimum requirements:
+         * - args[0] = port
+         * - args[1] = board width
+         * - args[2] = board height
+         * - args[3] = note width
+         * - args[4] = note height
+         */
+        if (args.length < 6) {
             System.err.println("Required: java BBoard <port> <board_w> <board_h> <note_w> <note_h> <colours>");
             System.exit(1);
         }
         try {
-            //Parses the numeric arguments, also includes a cacth in event of invalid entry
+            // Parses the numeric arguments, also includes a cacth in event of invalid entry
             int port = Integer.parseInt(args[0]);
 
             BOARD_WIDTH = Integer.parseInt(args[1]);
@@ -44,27 +47,36 @@ public class BBoard{
             NOTE_WIDTH = Integer.parseInt(args[3]);
             NOTE_HEIGHT = Integer.parseInt(args[4]);
 
-            //last set of arguemnts are for colours. will standardize colours to lowercase for easier comparisons
-            for (int i=5; i< args.length; i++){
+            // last set of arguemnts are for colours. will standardize colours to lowercase
+            // for easier comparisons
+            for (int i = 5; i < args.length; i++) {
                 VALID_COLOURS.add(args[i].toLowerCase());
             }
 
-            //Creating a server socket and listen for clients
+            // Creating a server socket and listen for clients
             ServerSocket serverSocket = new ServerSocket(port);
-            System.out.println("Serving running on port "+ port);
+            System.out.println("Serving running on port " + port);
 
-            //accept loop
-            while (true){
-                Socket clientSocket = serverSocket.accept(); //barred until client connetcs
+            // accept loop
+            while (true) {
+                Socket clientSocket = serverSocket.accept(); // barred until client connetcs
 
-                //create  new thread for client- this is the handshaking starter also
+                // create new thread for client- this is the handshaking starter also
                 ClientHandler handler = new ClientHandler(clientSocket);
                 handler.start();
             }
         } catch (Exception e) {
-            //end server if any fatal startup error occurs
+            // end server if any fatal startup error occurs
             e.printStackTrace();
         }
     }
-    
+
+    public static synchronized void updateDimensions(int w, int h, int nw, int nh) {
+        BOARD_WIDTH = w;
+        BOARD_HEIGHT = h;
+        NOTE_WIDTH = nw;
+        NOTE_HEIGHT = nh;
+        configured = true;
+    }
+
 }
