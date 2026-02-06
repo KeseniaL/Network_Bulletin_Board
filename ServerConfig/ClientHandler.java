@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 /*Setting up Thread-per-client. Responsible for the following:
     - Establish one thread per client
@@ -50,6 +51,10 @@ public class ClientHandler extends Thread{
     private void sendHandshake(){
         out.println("BOARD " + BBoard.BOARD_WIDTH + " " + BBoard.BOARD_HEIGHT);
         out.println("NOTE " + BBoard.NOTE_WIDTH + " " + BBoard.NOTE_HEIGHT);
-        out.println("COLOURS " + String.join(" ", BBoard.VALID_COLOURS));
+
+        //had to fix colour set to fix recurring error when picking a colour not listed original list when setting up server
+        List<String> colours = new ArrayList<> (BBoard.VALID_COLOURS);
+        Collections.sort(colours);
+        out.println("COLOURS " + String.join(" ", colours));
     }
 }
