@@ -20,7 +20,7 @@ public class BBoard{
     public static int NOTE_WIDTH; //note width set
     public static int NOTE_HEIGHT; //note height set
 
-    public static Set<String> VALID_COLOURS = new HashSet<>(); //initializing string set for colours
+    public static Set<String> VALID_COLOURS = new List<>; //initializing string set for colours
 
 // ENTRY POINT 
     public static void main(String[] args){

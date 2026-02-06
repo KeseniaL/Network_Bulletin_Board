@@ -22,7 +22,7 @@ public class Board {
         Note newNote = new Note(x,y, BBoard.NOTE_WIDTH,BBoard.NOTE_HEIGHT,colour,message);
         //check for note overlap
         for (Note n : notes) {
-            if (n.completelyOverlaps(newNote)) {
+            if (n.x == x && n.y == y) {
                 return error("COMPLETE_OVERLAP", "Note completely overlaps");
             }
         }

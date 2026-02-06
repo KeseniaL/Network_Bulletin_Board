@@ -35,7 +35,7 @@ public class ClientHandler extends Thread{
                 out.println(response); //send single response to client once command has gone through parser
 
                 //client has completed their request and wishes to disconnect, close socket
-                if(response.equals("DISCONNECT")){
+                if(line.equals("DISCONNECT")){
                     break;
                 }
             }
