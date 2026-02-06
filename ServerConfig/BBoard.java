@@ -45,6 +45,7 @@ public class BBoard{
             NOTE_HEIGHT = Integer.parseInt(args[4]);
 
             //last set of arguemnts are for colours. will standardize colours to lowercase for easier comparisons
+            VALID_COLOURS.clear();
             for (int i=5; i< args.length; i++){
                 VALID_COLOURS.add(args[i].toLowerCase());
             }
