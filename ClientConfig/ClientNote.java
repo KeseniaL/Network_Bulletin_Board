@@ -1,5 +1,3 @@
-package client;
-
 public class ClientNote {
     int x, y, width, height;
     String color;
