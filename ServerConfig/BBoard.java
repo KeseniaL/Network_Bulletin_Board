@@ -22,7 +22,11 @@ public class BBoard {
     public static int NOTE_HEIGHT; // note height set
     public static boolean configured = false; // Tracks if board has been resized
 
+<<<<<<< HEAD
+    public static Set<String> VALID_COLOURS = new HashSet<>(); //initializing string set for colours
+=======
     public static Set<String> VALID_COLOURS = new HashSet<>(); // initializing string set for colours
+>>>>>>> f6d5f81a8c0e8556135a13a5c2b1f1ff3c6cb7c6
 
     // ENTRY POINT
     public static void main(String[] args) {
@@ -47,9 +51,15 @@ public class BBoard {
             NOTE_WIDTH = Integer.parseInt(args[3]);
             NOTE_HEIGHT = Integer.parseInt(args[4]);
 
+<<<<<<< HEAD
+            //last set of arguemnts are for colours. will standardize colours to lowercase for easier comparisons
+            VALID_COLOURS.clear();
+            for (int i=5; i< args.length; i++){
+=======
             // last set of arguemnts are for colours. will standardize colours to lowercase
             // for easier comparisons
             for (int i = 5; i < args.length; i++) {
+>>>>>>> f6d5f81a8c0e8556135a13a5c2b1f1ff3c6cb7c6
                 VALID_COLOURS.add(args[i].toLowerCase());
             }
 
