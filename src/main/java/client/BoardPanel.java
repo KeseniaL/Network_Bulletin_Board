@@ -53,6 +53,14 @@ public class BoardPanel extends JPanel {
         repaint();
     }
 
+    public void replaceAllNotes(List<ClientNote> newNotes, List<Point> newPins) {
+        notes.clear();
+        notes.addAll(newNotes);
+        pins.clear();
+        pins.addAll(newPins);
+        repaint();
+    }
+
     public boolean checkOverlap(int x, int y, int w, int h) {
         for (ClientNote n : notes) {
             if (x < n.x + n.width && x + w > n.x &&

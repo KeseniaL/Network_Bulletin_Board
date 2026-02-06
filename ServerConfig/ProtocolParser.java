@@ -7,19 +7,19 @@
 //class handles parsing a single client command
 public class ProtocolParser {
 
-    //Single shared board for all clients
+    // Single shared board for all clients
     private static final Board board = new Board();
 
     public static String parse(String input) {
 
         if (input == null || input.isEmpty()) {
-            return error("INVALID_FORMAT", "Empty command"); //rejects any empty commands immediately
+            return error("INVALID_FORMAT", "Empty command"); // rejects any empty commands immediately
         }
 
         String[] tokens = input.split("\\s+"); // split command by spaces, single spaces only as detailed in RFC
         String cmd = tokens[0]; // first token must be command key word
 
-        //parsing for the different commands
+        // parsing for the different commands
         switch (cmd) {
 
             case "POST":
@@ -46,7 +46,7 @@ public class ProtocolParser {
         }
     }
 
-    //this validates syntax of POST <x> <y> <colour> <message>
+    // this validates syntax of POST <x> <y> <colour> <message>
     private static String parsePost(String[] tokens, String fulline) {
 
         if (tokens.length < 5) {
@@ -61,20 +61,25 @@ public class ProtocolParser {
             return error("INVALID_FORMAT", "Coordinates must be non negative integers");
         }
 
-        //validate colour
+        // validate colour
         String colour = tokens[3].toLowerCase();
         if (!BBoard.VALID_COLOURS.contains(colour)) {
             return error("COLOUR_NOT_SUPPORTED", "Colour not found in list");
         }
 
-        //message is everything after the colour
-        int msgStart = fulline.indexOf(colour) + colour.length() + 1;
-        String message = fulline.substring(msgStart);
+        // message is everything after the colour
+        // Use tokens[3] (original case) to find the index, NOT the lowercased 'colour'
+        // var
+        int msgStart = fulline.indexOf(tokens[3]) + tokens[3].length() + 1;
+        String message = "";
+        if (msgStart < fulline.length()) {
+            message = fulline.substring(msgStart);
+        }
 
         return board.post(x, y, colour, message);
     }
 
-    //validates PIN syntax: PIN <x> <y>
+    // validates PIN syntax: PIN <x> <y>
     private static String parsePin(String[] tokens) {
 
         if (tokens.length != 3) {
@@ -92,7 +97,7 @@ public class ProtocolParser {
         return board.pin(x, y);
     }
 
-    //validates UNPIN syntax: UNPIN <x> <y>
+    // validates UNPIN syntax: UNPIN <x> <y>
     private static String parseUnPin(String[] tokens) {
 
         if (tokens.length != 3) {
@@ -110,18 +115,18 @@ public class ProtocolParser {
         return board.unpin(x, y);
     }
 
-    //validates GET syntax and handles:
-    //GET
-    //GET PINS
-    //GET colour=<c> contains=<x> <y> refersTo=<substring>
+    // validates GET syntax and handles:
+    // GET
+    // GET PINS
+    // GET colour=<c> contains=<x> <y> refersTo=<substring>
     private static String parseGet(String[] tokens) {
 
-        //GET (no filters = ALL)
+        // GET (no filters = ALL)
         if (tokens.length == 1) {
             return board.getFilteredNotes(null, null, null);
         }
 
-        //GET PINS and configuring filetered based get
+        // GET PINS and configuring filetered based get
         if (tokens.length == 2 && tokens[1].equals("PINS")) {
             return board.getPins();
         }
@@ -159,12 +164,11 @@ public class ProtocolParser {
 
         return board.getFilteredNotes(
                 colour,
-                (cx == null ? null : new int[]{cx, cy}),
-                refersTo
-        );
+                (cx == null ? null : new int[] { cx, cy }),
+                refersTo);
     }
 
-    //for SHAKE and CLEAR that takes no arguments
+    // for SHAKE and CLEAR that takes no arguments
     private static String ParseNoArgs(String[] tokens, String cmd) {
 
         if (tokens.length != 1) {
@@ -178,7 +182,7 @@ public class ProtocolParser {
         }
     }
 
-    //standardizes error messages from server
+    // standardizes error messages from server
     private static String error(String code, String msg) {
         return "ERROR " + code + " " + msg;
     }
