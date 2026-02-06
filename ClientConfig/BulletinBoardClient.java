@@ -73,7 +73,7 @@ public class BulletinBoardClient extends JFrame {
 
         // split control/log vertical
         JSplitPane controlLogSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, logPanel);
-        controlLogSplit.setDividerLocation(400);
+        controlLogSplit.setDividerLocation(425);
 
         // this splits the visual board vs controls
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, boardPanel, controlLogSplit);
