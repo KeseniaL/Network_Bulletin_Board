@@ -1,3 +1,7 @@
+
+/* This class is a custom swing comment (extending JPanel) and is responsible for rendering the 
+* visual data of the bulletin board, including the grid, notes, and pins.
+*/
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
@@ -9,17 +13,22 @@ public class BoardPanel extends JPanel {
     private int boardHeight = 0;
     private List<Point> pins = new ArrayList<>();
 
+    // This is the constructor for the BoardPanel class, which sets the default size
+    // and background color of the panel.
     public BoardPanel() {
         setPreferredSize(new Dimension(600, 600)); // Default size
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createLineBorder(Color.BLACK));
     }
 
+    // This method sets the dimensions of the board.
     public void setBoardDimensions(int width, int height) {
         this.boardWidth = width;
         this.boardHeight = height;
     }
 
+    // These 2 methods are used when the server sends the board dimensions to the
+    // client.
     public int getBoardWidth() {
         return boardWidth;
     }
@@ -28,29 +37,32 @@ public class BoardPanel extends JPanel {
         return boardHeight;
     }
 
+    // This method adds a note to the board.
     public void addNote(ClientNote note) {
         notes.add(note);
         repaint();
     }
 
+    // This method adds a pin to the board.
     public void pinNote(int x, int y) {
-        // Just adding a visual pin at x,y
         pins.add(new Point(x, y));
         repaint();
     }
 
+    // This method removes a pin from the board.
     public void unpinNote(int x, int y) {
-        // Remove pin near x,y? Or exact match?
         pins.removeIf(p -> p.x == x && p.y == y);
         repaint();
     }
 
+    // This method clears the board.
     public void clear() {
         notes.clear();
         pins.clear();
         repaint();
     }
 
+    // This method replaces all the notes on the board with the new notes.
     public void replaceAllNotes(List<ClientNote> newNotes, List<Point> newPins) {
         notes.clear();
         notes.addAll(newNotes);
@@ -59,6 +71,7 @@ public class BoardPanel extends JPanel {
         repaint();
     }
 
+    // This method checks if there is an overlap between the notes.
     public boolean checkOverlap(int x, int y, int w, int h) {
         for (ClientNote n : notes) {
             // Only check for exact coordinate overlap (as per Server specs)
@@ -69,9 +82,8 @@ public class BoardPanel extends JPanel {
         return false;
     }
 
+    // This method shakes the board by removing unpinned notes.
     public void shake() {
-        // Remove unpinned notes
-        // We need to check which notes intersect with 'pins'.
         notes.removeIf(n -> {
             boolean hasPin = false;
             for (Point p : pins) {
@@ -85,6 +97,9 @@ public class BoardPanel extends JPanel {
         repaint();
     }
 
+    // This method paints the component. We use Override to override the
+    // paintComponent method of the JPanel class, which is called when the panel is
+    // repainted.
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -158,6 +173,7 @@ public class BoardPanel extends JPanel {
         }
     }
 
+    // This method returns the color of the note based on the color name.
     private Color getColor(String colName) {
         switch (colName.toLowerCase()) {
             case "red":

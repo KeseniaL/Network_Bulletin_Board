@@ -1,10 +1,14 @@
+
+/* This class handles the network connection to the server and is responsible for sending and receiving messages to and from the server. 
+* It's a helper class for the BulletinBoardClient class
+*/
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-// this class handles the network connection to the server 
+// handles the network connection to the server 
 public class NetworkClient {
     private Socket socket;
     private PrintWriter out;
@@ -13,7 +17,7 @@ public class NetworkClient {
     private Thread listenerThread;
     private volatile boolean isRunning = false;
 
-    // this class is the constructor in which we initialize the gui object
+    // constructor in which we initialize the gui object
     public NetworkClient(BulletinBoardClient gui) {
         this.gui = gui;
     }

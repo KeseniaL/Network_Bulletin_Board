@@ -1,3 +1,8 @@
+/* This class is the main application window for the bulletin board client. 
+* It is responsible for creating the GUI, handling user input, and sending requests to the server. 
+* It also handles the display of the bulletin board and the notes on the board. 
+*/
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -58,19 +63,19 @@ public class BulletinBoardClient extends JFrame {
         JPanel connectionPanel = createConnectionPanel();
         add(connectionPanel, BorderLayout.NORTH);
 
-        // Control Panel (Left side)
+        // control panel on the left side
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("POST", createPostPanel());
         tabbedPane.addTab("ACTIONS", createCombinedActionPanel());
 
-        // Logs
+        // logs panel seen on the bottom right
         JPanel logPanel = createLogPanel();
 
-        // Split Control/Log vertical
+        // split control/log vertical
         JSplitPane controlLogSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, logPanel);
-        controlLogSplit.setDividerLocation(300);
+        controlLogSplit.setDividerLocation(400);
 
-        // Main Split: Visual Board (Center) vs Controls (East)
+        // this splits the visual board vs controls
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, boardPanel, controlLogSplit);
         mainSplit.setDividerLocation(600);
         mainSplit.setResizeWeight(0.7);
@@ -79,7 +84,7 @@ public class BulletinBoardClient extends JFrame {
 
         add(mainSplit, BorderLayout.CENTER);
 
-        // Init Polling Timer (3 seconds)
+        // Added an init polling timer to sync the board on connect
         pollingTimer = new Timer(3000, e -> {
             if (networkClient.isConnected()) {
                 // Poll: ALWAYS fetch full board to sync state
@@ -92,12 +97,12 @@ public class BulletinBoardClient extends JFrame {
         setVisible(true);
     }
 
-    // this private class creates the connection panel
+    // this private class creates the connection panel to connect to the server
     private JPanel createConnectionPanel() {
         JPanel panel = new JPanel(new FlowLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Server Connection"));
 
-        // ip and port fields
+        // setting up the filler ip and port fields - can be changed ba
         ipField = new JTextField("localhost", 10);
         portField = new JTextField("4554", 5);
         connectButton = new JButton("Connect");
@@ -257,17 +262,36 @@ public class BulletinBoardClient extends JFrame {
             networkClient.sendRequest(CommandBuilder.buildGet(c, fx, fy, m));
         });
         gbc.gridy++;
+        gbc.gridy++;
         panel.add(getButton, gbc);
+
+        // GET PINS Button
+        JButton getPinsButton = new JButton("GET PINS");
+        getPinsButton.setToolTipText("Retrieve only pins");
+        getPinsButton.addActionListener(e -> {
+            lastCommand = "GET PINS";
+            verboseLog = true;
+            manualFilterActive = true; // Treat as manual query to avoid clearing board (unless we want to? Users
+                                       // choice usually)
+                                       // Actually implementation plan said: "The pins should reappear on the empty
+                                       // board"
+                                       // So we won't trigger full sync buffering, just direct updates
+            networkClient.sendRequest(CommandBuilder.buildGetPins());
+        });
+        gbc.gridy++;
+        panel.add(getPinsButton, gbc);
 
         // --- PIN/UNPIN Section ---
         gbc.gridy++;
         panel.add(new JLabel("--- PIN / UNPIN ---"), gbc);
 
+        // setting up the filler pin and unpin fields
         pinXField = new JTextField("0", 3);
         pinYField = new JTextField("0", 3);
         JButton pinButton = new JButton("PIN");
         JButton unpinButton = new JButton("UNPIN");
 
+        // setting up the pin and unpin buttons to send requests to the server
         pinButton.addActionListener(e -> {
             try {
                 int x = Integer.parseInt(pinXField.getText());
@@ -278,6 +302,7 @@ public class BulletinBoardClient extends JFrame {
                 log("Error: Coordinates must be integers.");
             }
         });
+        // setting up the unpin button to send requests to the server
         unpinButton.addActionListener(e -> {
             try {
                 int x = Integer.parseInt(pinXField.getText());
@@ -289,6 +314,7 @@ public class BulletinBoardClient extends JFrame {
             }
         });
 
+        // setting up the pin and unpin fields
         JPanel coordsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         coordsPanel.add(new JLabel("X:"));
         coordsPanel.add(pinXField);
@@ -309,18 +335,22 @@ public class BulletinBoardClient extends JFrame {
         gbc.gridy++;
         panel.add(new JLabel("--- BOARD ACTIONS ---"), gbc);
 
+        // setting up the shake and clear buttons
         JButton shakeButton = new JButton("SHAKE");
         JButton clearButton = new JButton("CLEAR");
 
+        // setting up the shake button to send requests to the server
         shakeButton.addActionListener(e -> {
             lastCommand = "SHAKE";
             networkClient.sendRequest(CommandBuilder.buildShake());
         });
+        // setting up the clear button to send requests to the server
         clearButton.addActionListener(e -> {
             lastCommand = "CLEAR";
             networkClient.sendRequest(CommandBuilder.buildClear());
         });
 
+        // setting up the shake and clear buttons in a panel
         JPanel actionBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         actionBtnPanel.add(shakeButton);
         actionBtnPanel.add(clearButton);
@@ -370,12 +400,15 @@ public class BulletinBoardClient extends JFrame {
         networkClient.disconnect();
     }
 
+    // this private class creates the board configuration panel (where you can
+    // configure the board)
     private void configureBoard() {
         JTextField wField = new JTextField("500", 5);
         JTextField hField = new JTextField("500", 5);
         JTextField nwField = new JTextField("50", 5);
         JTextField nhField = new JTextField("50", 5);
 
+        // setting up the board configuration panel
         JPanel myPanel = new JPanel();
         myPanel.setLayout(new GridLayout(4, 2));
         myPanel.add(new JLabel("Board Width:"));
@@ -425,10 +458,12 @@ public class BulletinBoardClient extends JFrame {
         }
     }
 
+    // this private class checks if the value is valid
     private boolean isValid(int val) {
         return val > 0;
     }
 
+    // this private class sends the POST command to the server
     private void sendPost() {
         // basic validation for POST command
         String message = postMessageField.getText();
@@ -436,7 +471,7 @@ public class BulletinBoardClient extends JFrame {
             log("Message cannot be empty for POST.");
             return;
         }
-
+        // setting up the post command to send requests to the server
         try {
             int x = Integer.parseInt(postXField.getText());
             int y = Integer.parseInt(postYField.getText());
@@ -455,6 +490,7 @@ public class BulletinBoardClient extends JFrame {
             if (bh <= 0)
                 bh = 6;
 
+            // checking if the note extends outside the board boundaries
             if (x + noteWidth > bw || y + noteHeight > bh) {
                 log("Error: Note extends outside the board boundaries (" + bw + "x" + bh + ").");
                 return;
@@ -638,11 +674,11 @@ public class BulletinBoardClient extends JFrame {
         } else if (response.contains("SUCCESS RESIZED")) {
             boardPanel.clear();
             log("Board resized by server. Refreshing...");
-            // Force a refresh
+            // Force a refresh if the board was resized
             networkClient.sendRequest(CommandBuilder.buildGet("", null, null, ""));
+        } else if (response.contains("SUCCESS PINS EMPTY")) {
+            log("No pins found on server.");
         } else if (response.startsWith("PIN ")) {
-            // Data Line: PIN x y (Not explicit SUCCESS command)
-            // But we also have "PIN_PARSED" check below.
             // Logic: If strict "PIN x y" format and buffering.
             String[] parts = response.split(" ");
             if (parts.length == 3) {
@@ -651,6 +687,8 @@ public class BulletinBoardClient extends JFrame {
                     int py = Integer.parseInt(parts[2]);
                     if (isBuffering) {
                         tempPins.add(new Point(px, py));
+                    } else {
+                        boardPanel.pinNote(px, py);
                     }
                 } catch (Exception e) {
                 }
@@ -688,6 +726,7 @@ public class BulletinBoardClient extends JFrame {
         }
     }
 
+    // main method to start the client
     public static void main(String[] args) {
         // use standard look and feel to keep it simple for now
         try {
