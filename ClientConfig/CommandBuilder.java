@@ -1,5 +1,3 @@
-package client;
-
 /**
  * static helper class to construct RFC-compliant messages
  * will be used to ensure that there are no extra whitespace, its entered in the
@@ -15,9 +13,19 @@ public class CommandBuilder {
         return String.format("POST %d %d %s %s", x, y, color, message);
     }
 
-    // GET (stub for now as server doesn't support filters yet)
-    public static String buildGet() {
-        return "GET";
+    // GET (Filtered)
+    public static String buildGet(String colour, Integer cx, Integer cy, String refersTo) {
+        StringBuilder sb = new StringBuilder("GET");
+        if (colour != null && !colour.isEmpty()) {
+            sb.append(" colour=").append(colour);
+        }
+        if (cx != null && cy != null) {
+            sb.append(" contains= ").append(cx).append(" ").append(cy);
+        }
+        if (refersTo != null && !refersTo.isEmpty()) {
+            sb.append(" refersTo=").append(refersTo);
+        }
+        return sb.toString();
     }
 
     // PIN <x> <y>
@@ -30,12 +38,7 @@ public class CommandBuilder {
         return String.format("UNPIN %d %d", x, y);
     }
 
-    // GET PINS (Server currently doesn't support this specific command based on
-    // ProtocolParser, mapping to GET for now or custom if needed)
-    // Looking at ProtocolParser, it only has POST, GET, PIN, UNPIN, SHAKE, CLEAR,
-    // DISCONNECT
-    // So we will just use GET for now to stay safe, or if the user wanted a
-    // specific GET PINS we'd need server support.
+    // GET
     public static String buildGetPins() {
         return "GET";
     }
@@ -48,5 +51,10 @@ public class CommandBuilder {
     // CLEAR
     public static String buildClear() {
         return "CLEAR";
+    }
+
+    // RESIZE <w> <h> <nw> <nh>
+    public static String buildResize(int w, int h, int nw, int nh) {
+        return String.format("RESIZE %d %d %d %d", w, h, nw, nh);
     }
 }

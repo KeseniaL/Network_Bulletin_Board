@@ -1,5 +1,3 @@
-package client;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -69,11 +67,17 @@ public class NetworkClient {
 
     // sends a request to the server to be processed
     public void sendRequest(String request) {
+        sendRequest(request, false);
+    }
+
+    public void sendRequest(String request, boolean silent) {
         if (!isConnected()) { // check if the client is connected to the server
             gui.log("Not connected to server.");
             return;
         }
-        gui.log("C->S: " + request);
+        if (!silent) {
+            gui.log("C->S: " + request);
+        }
         out.println(request);
     }
 

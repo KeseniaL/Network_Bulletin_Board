@@ -1,5 +1,3 @@
-package client;
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
@@ -53,10 +51,18 @@ public class BoardPanel extends JPanel {
         repaint();
     }
 
+    public void replaceAllNotes(List<ClientNote> newNotes, List<Point> newPins) {
+        notes.clear();
+        notes.addAll(newNotes);
+        pins.clear();
+        pins.addAll(newPins);
+        repaint();
+    }
+
     public boolean checkOverlap(int x, int y, int w, int h) {
         for (ClientNote n : notes) {
-            if (x < n.x + n.width && x + w > n.x &&
-                    y < n.y + n.height && y + h > n.y) {
+            // Only check for exact coordinate overlap (as per Server specs)
+            if (n.x == x && n.y == y) {
                 return true;
             }
         }
@@ -89,25 +95,30 @@ public class BoardPanel extends JPanel {
         int cols = (boardWidth > 0) ? boardWidth : 6;
         int rows = (boardHeight > 0) ? boardHeight : 6;
 
-        int cellWidth = getWidth() / cols;
-        int cellHeight = getHeight() / rows;
+        // Use double precision for scaling factors to fill the space
+        double cellWidth = (double) getWidth() / cols;
+        double cellHeight = (double) getHeight() / rows;
 
         // Draw Grid
         g2d.setColor(Color.LIGHT_GRAY);
+        // Optimize grid drawing: Don't draw 500 lines if cellWidth is small
         for (int i = 0; i <= cols; i++) {
-            g2d.drawLine(i * cellWidth, 0, i * cellWidth, rows * cellHeight);
+            int x = (int) (i * cellWidth);
+            g2d.drawLine(x, 0, x, getHeight());
         }
         for (int i = 0; i <= rows; i++) {
-            g2d.drawLine(0, i * cellHeight, cols * cellWidth, i * cellHeight);
+            int y = (int) (i * cellHeight);
+            g2d.drawLine(0, y, getWidth(), y);
         }
 
         // Draw Notes
         for (ClientNote n : notes) {
             g2d.setColor(getColor(n.color));
-            int nx = n.x * cellWidth;
-            int ny = n.y * cellHeight;
-            int nw = n.width * cellWidth;
-            int nh = n.height * cellHeight;
+            // Scale logic
+            int nx = (int) (n.x * cellWidth);
+            int ny = (int) (n.y * cellHeight);
+            int nw = (int) Math.ceil(n.width * cellWidth);
+            int nh = (int) Math.ceil(n.height * cellHeight);
 
             g2d.fillRect(nx, ny, nw, nh);
             g2d.setColor(Color.BLACK);
@@ -133,13 +144,15 @@ public class BoardPanel extends JPanel {
         // Draw Pins
         g2d.setColor(new Color(0, 0, 139)); // Dark Blue
         for (Point p : pins) {
-            // Pin at top-left offset
-            int px = p.x * cellWidth + 10;
-            int py = p.y * cellHeight + 10;
-            int pinSize = Math.min(cellWidth, cellHeight) / 5; // Scale pin slightly relative to cell
+            // Pin at top-left offset is improper for dense grids
+            // Center the pin in the "logical" cell
+            int px = (int) (p.x * cellWidth + (cellWidth * 0.2));
+            int py = (int) (p.y * cellHeight + (cellHeight * 0.2));
+
+            int pinSize = (int) Math.max(5, Math.min(cellWidth, cellHeight) / 2);
 
             g2d.fillOval(px, py, pinSize, pinSize);
-            g2d.setColor(Color.WHITE); // outline makes it pop
+            g2d.setColor(Color.WHITE);
             g2d.drawOval(px, py, pinSize, pinSize);
             g2d.setColor(new Color(0, 0, 139));
         }

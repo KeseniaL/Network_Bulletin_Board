@@ -1,8 +1,8 @@
-package client;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.*;
+import javax.swing.Timer;
 
 // makes our class a standard application window
 public class BulletinBoardClient extends JFrame {
@@ -23,6 +23,19 @@ public class BulletinBoardClient extends JFrame {
     private JComboBox<String> colorBox;
     // getFilterField unused for now
     private JTextField pinXField, pinYField;
+    private JTextField filterXField, filterYField, filterMsgField;
+    private JComboBox<String> filterColorBox;
+
+    // Flag to distinguish between Full Sync and Manual Filtered Query
+    private boolean manualFilterActive = false;
+    private boolean firstConnect = true;
+
+    // Sync Mechanism
+    private Timer pollingTimer;
+    private boolean isBuffering = false;
+    private boolean verboseLog = true;
+    private java.util.List<ClientNote> tempNotes = new ArrayList<>();
+    private java.util.List<Point> tempPins = new ArrayList<>();
 
     // Visual Board
     private BoardPanel boardPanel;
@@ -64,6 +77,18 @@ public class BulletinBoardClient extends JFrame {
 
         add(mainSplit, BorderLayout.CENTER);
 
+        add(mainSplit, BorderLayout.CENTER);
+
+        // Init Polling Timer (3 seconds)
+        pollingTimer = new Timer(3000, e -> {
+            if (networkClient.isConnected()) {
+                // Poll: ALWAYS fetch full board to sync state
+                manualFilterActive = false;
+                verboseLog = false; // Suppress logs for this poll
+                networkClient.sendRequest(CommandBuilder.buildGet("", null, null, ""), true);
+            }
+        });
+
         setVisible(true);
     }
 
@@ -74,7 +99,7 @@ public class BulletinBoardClient extends JFrame {
 
         // ip and port fields
         ipField = new JTextField("localhost", 10);
-        portField = new JTextField("12345", 5);
+        portField = new JTextField("4554", 5);
         connectButton = new JButton("Connect");
         disconnectButton = new JButton("Disconnect");
         disconnectButton.setEnabled(false);
@@ -158,13 +183,78 @@ public class BulletinBoardClient extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
-        panel.add(new JLabel("--- GET ---"), gbc);
+        panel.add(new JLabel("--- GET & FILTER ---"), gbc);
+
+        // Filters
+        // Using GridBagLayout for cleaner form
+        JPanel filterPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints fgbc = new GridBagConstraints();
+        fgbc.fill = GridBagConstraints.HORIZONTAL;
+        fgbc.insets = new Insets(2, 2, 2, 2);
+
+        filterXField = new JTextField(3);
+        filterYField = new JTextField(3);
+        filterMsgField = new JTextField(10);
+
+        // Color (Dropdown)
+        fgbc.gridx = 0;
+        fgbc.gridy = 0;
+        filterPanel.add(new JLabel("Color:"), fgbc);
+        fgbc.gridx = 1;
+
+        String[] filterColors = { "", "Yellow", "Green", "Blue", "Pink", "White" };
+        filterColorBox = new JComboBox<>(filterColors);
+        filterColorBox.setToolTipText("Select color to filter (Empty = All)");
+        filterPanel.add(filterColorBox, fgbc);
+
+        // Contains X Y
+        fgbc.gridx = 0;
+        fgbc.gridy = 1;
+        filterPanel.add(new JLabel("Contains (X Y):"), fgbc);
+        fgbc.gridx = 1;
+        JPanel xyPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        filterXField.setToolTipText("X Coord");
+        filterYField.setToolTipText("Y Coord");
+        xyPanel.add(filterXField);
+        xyPanel.add(new JLabel(" "));
+        xyPanel.add(filterYField);
+        filterPanel.add(xyPanel, fgbc);
+
+        // Message
+        fgbc.gridx = 0;
+        fgbc.gridy = 2;
+        filterPanel.add(new JLabel("Msg Text:"), fgbc);
+        fgbc.gridx = 1;
+        filterMsgField.setToolTipText("Filter by message content");
+        filterPanel.add(filterMsgField, fgbc);
+
+        gbc.gridy++;
+        panel.add(filterPanel, gbc);
 
         JButton getButton = new JButton("GET");
-        getButton.setToolTipText("Retrieve all notes from server");
+        getButton.setToolTipText("Retrieve notes (Apply Filters if set)");
         getButton.addActionListener(e -> {
             lastCommand = "GET";
-            networkClient.sendRequest(CommandBuilder.buildGet());
+            verboseLog = true; // Manual action = show logs
+
+            // Read UI filters
+            Object selected = filterColorBox.getSelectedItem();
+            String c = (selected != null) ? selected.toString().trim() : "";
+            String m = filterMsgField.getText().trim();
+            Integer fx = null, fy = null;
+            try {
+                if (!filterXField.getText().trim().isEmpty())
+                    fx = Integer.parseInt(filterXField.getText().trim());
+                if (!filterYField.getText().trim().isEmpty())
+                    fy = Integer.parseInt(filterYField.getText().trim());
+            } catch (Exception ex) {
+            }
+
+            // If filters are present, this is a Query (Don't wipe board).
+            // If filters are empty, this is a Refresh (Update board).
+            manualFilterActive = (!c.isEmpty() || !m.isEmpty() || fx != null || fy != null);
+
+            networkClient.sendRequest(CommandBuilder.buildGet(c, fx, fy, m));
         });
         gbc.gridy++;
         panel.add(getButton, gbc);
@@ -280,6 +370,65 @@ public class BulletinBoardClient extends JFrame {
         networkClient.disconnect();
     }
 
+    private void configureBoard() {
+        JTextField wField = new JTextField("500", 5);
+        JTextField hField = new JTextField("500", 5);
+        JTextField nwField = new JTextField("50", 5);
+        JTextField nhField = new JTextField("50", 5);
+
+        JPanel myPanel = new JPanel();
+        myPanel.setLayout(new GridLayout(4, 2));
+        myPanel.add(new JLabel("Board Width:"));
+        myPanel.add(wField);
+        myPanel.add(new JLabel("Board Height:"));
+        myPanel.add(hField);
+        myPanel.add(new JLabel("Note Width:"));
+        myPanel.add(nwField);
+        myPanel.add(new JLabel("Note Height:"));
+        myPanel.add(nhField);
+
+        // Options for the user
+        Object[] options = { "Resize Board", "Skip (Use Current)" };
+
+        int result = JOptionPane.showOptionDialog(null, myPanel,
+                "Configure Board Dimensions?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        // If "Resize Board" (Index 0) is selected
+        if (result == 0) {
+            try {
+                int w = Integer.parseInt(wField.getText());
+                int h = Integer.parseInt(hField.getText());
+                int nw = Integer.parseInt(nwField.getText());
+                int nh = Integer.parseInt(nhField.getText());
+                networkClient.sendRequest(CommandBuilder.buildResize(w, h, nw, nh));
+            } catch (NumberFormatException e) {
+                log("Invalid dimensions. Must be integers.");
+            }
+        } else {
+            // "Skip" = Lock the board with current dimensions
+            try {
+                int w = boardPanel.getBoardWidth();
+                int h = boardPanel.getBoardHeight();
+                // Send explicit RESIZE to lock the config (Server won't clear if dims match)
+                networkClient.sendRequest(
+                        CommandBuilder.buildResize(isValid(w) ? w : 500, isValid(h) ? h : 500, noteWidth, noteHeight));
+                log("Configuration confirmed. Board locked.");
+            } catch (Exception e) {
+                // Fallback catch-all
+                networkClient.sendRequest(CommandBuilder.buildResize(500, 500, 50, 50));
+            }
+        }
+    }
+
+    private boolean isValid(int val) {
+        return val > 0;
+    }
+
     private void sendPost() {
         // basic validation for POST command
         String message = postMessageField.getText();
@@ -342,6 +491,11 @@ public class BulletinBoardClient extends JFrame {
             // Reset board on new connection
             boardPanel.clear();
             log("Connected to server.");
+
+            log("Connected to server.");
+
+            // Handshake: Get current state to check if configured
+            networkClient.sendRequest(CommandBuilder.buildGet("", null, null, ""));
         });
     }
 
@@ -352,6 +506,7 @@ public class BulletinBoardClient extends JFrame {
             disconnectButton.setEnabled(false);
             boardPanel.clear(); // Reset board on disconnect
             log("Disconnected from server.");
+            pollingTimer.stop();
         });
     }
 
@@ -359,10 +514,22 @@ public class BulletinBoardClient extends JFrame {
     // messages
     public void log(String message) {
         SwingUtilities.invokeLater(() -> {
-            if (message.startsWith("S->C: ")) {
-                handleServerResponse(message.substring(6).trim());
+            boolean isServerMsg = message.startsWith("S->C: ");
+            String serverContent = isServerMsg ? message.substring(6).trim() : "";
+
+            if (isServerMsg) {
+                handleServerResponse(serverContent);
             }
-            logArea.append(message + "\n");
+
+            // Suppression Logic for Polling
+            boolean suppress = !verboseLog && isServerMsg &&
+                    (serverContent.startsWith("NOTE") ||
+                            serverContent.startsWith("PIN ") ||
+                            serverContent.contains("SUCCESS GET"));
+
+            if (!suppress) {
+                logArea.append(message + "\n");
+            }
         });
     }
 
@@ -393,26 +560,101 @@ public class BulletinBoardClient extends JFrame {
                     String color = parts[3];
                     String msg = "";
 
-                    // Protocol: NOTE x y color message
-                    // Find start of message
-                    String prefix = "NOTE " + x + " " + y + " " + color + " ";
-                    if (response.length() > prefix.length()) {
-                        msg = response.substring(prefix.length());
+                    // Protocol: NOTE x y color message...
+                    // Reconstruct message from parts[4] onwards to handle spaces correctly
+                    if (parts.length > 4) {
+                        msg = String.join(" ", Arrays.copyOfRange(parts, 4, parts.length));
                     }
 
                     // Logic to show in logs
-                    String logMsg = String.format("Received Note: X=%d Y=%d Color=%s Msg='%s'", x, y, color, msg);
-                    log(logMsg);
+                    if (verboseLog) {
+                        String logMsg = String.format("Received Note: X=%d Y=%d Color=%s Msg='%s'", x, y, color, msg);
+                        log(logMsg);
+                    }
 
-                    // Add note directly (No filters)
-                    boardPanel.addNote(new ClientNote(x, y, noteWidth, noteHeight, color, msg));
+                    if (isBuffering) {
+                        tempNotes.add(new ClientNote(x, y, noteWidth, noteHeight, color, msg));
+                    } else {
+                        boardPanel.addNote(new ClientNote(x, y, noteWidth, noteHeight, color, msg));
+                    }
 
                 } catch (Exception e) {
                     log("Error parsing note line: " + response);
                 }
             }
+        } else if (response.contains("SUCCESS GET_COMPLETE")) {
+            // Atomic Update
+            if (isBuffering) {
+                boardPanel.replaceAllNotes(new ArrayList<>(tempNotes), new ArrayList<>(tempPins));
+                isBuffering = false;
+            }
         } else if (response.contains("SUCCESS GET")) {
+            // Check for dimensions in the SUCCESS GET line
+            // PROTOCOL: SUCCESS GET <w> <h> <nw> <nh>
+            String[] parts = response.split(" ");
+            if (parts.length >= 6) { // SUCCESS, GET, w, h, nw, nh, [configured]
+                try {
+                    int w = Integer.parseInt(parts[2]);
+                    int h = Integer.parseInt(parts[3]);
+                    int nw = Integer.parseInt(parts[4]);
+                    int nh = Integer.parseInt(parts[5]);
+                    boardPanel.setBoardDimensions(w, h);
+                    this.noteWidth = nw;
+                    this.noteHeight = nh;
+
+                    // Check logic for first connection
+                    if (firstConnect) {
+                        boolean isConfigured = false;
+                        if (parts.length >= 7) {
+                            isConfigured = Boolean.parseBoolean(parts[6]);
+                        }
+
+                        // Decide to show popup or not
+                        if (!isConfigured) {
+                            SwingUtilities.invokeLater(() -> configureBoard());
+                        } else {
+                            log("Board already configured. Skipping setup.");
+                        }
+
+                        firstConnect = false;
+                        pollingTimer.start();
+                    }
+
+                } catch (Exception e) {
+                }
+            }
+
+            // Only start buffering (updating board) if this is a SYNC request (not a manual
+            // filter query)
+            if (!manualFilterActive) {
+                isBuffering = true;
+                tempNotes.clear();
+                tempPins.clear();
+            } else {
+                // If it is a manual filter query, we do NOT buffer.
+                // We just let the logs show the results.
+                isBuffering = false;
+            }
+        } else if (response.contains("SUCCESS RESIZED")) {
             boardPanel.clear();
+            log("Board resized by server. Refreshing...");
+            // Force a refresh
+            networkClient.sendRequest(CommandBuilder.buildGet("", null, null, ""));
+        } else if (response.startsWith("PIN ")) {
+            // Data Line: PIN x y (Not explicit SUCCESS command)
+            // But we also have "PIN_PARSED" check below.
+            // Logic: If strict "PIN x y" format and buffering.
+            String[] parts = response.split(" ");
+            if (parts.length == 3) {
+                try {
+                    int px = Integer.parseInt(parts[1]);
+                    int py = Integer.parseInt(parts[2]);
+                    if (isBuffering) {
+                        tempPins.add(new Point(px, py));
+                    }
+                } catch (Exception e) {
+                }
+            }
         } else if (response.contains("POST_PARSED") || response.contains("POST_IT_POSTED")) {
             // SUCCESS POST_PARSED
             if (lastPostNote != null) {
